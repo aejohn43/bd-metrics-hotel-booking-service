@@ -2,7 +2,9 @@ package com.amazon.ata.metrics.classroom.activity;
 
 import com.amazon.ata.metrics.classroom.dao.ReservationDao;
 import com.amazon.ata.metrics.classroom.dao.models.UpdatedReservation;
+import com.amazon.ata.metrics.classroom.metrics.MetricsConstants;
 import com.amazon.ata.metrics.classroom.metrics.MetricsPublisher;
+import com.amazonaws.services.cloudwatch.model.StandardUnit;
 
 import java.time.ZonedDateTime;
 import javax.inject.Inject;
@@ -37,6 +39,16 @@ public class ModifyReservationActivity {
 
         UpdatedReservation updatedReservation = reservationDao.modifyReservation(reservationId, checkInDate,
             numberOfNights);
+        // Update the Booked ReservationCount metric count
+         // class-of-enum.enum-name
+        metricsPublisher.addMetric (MetricsConstants. MODIFY_COUNT, 1, StandardUnit.Count);
+        // Calculate the revenue difference due to the modification
+        double revenueDifference = updatedReservation.getModifiedReservation().getTotalCost ()
+                .subtract (updatedReservation.getOriginalReservation ().getTotalCost())
+                .doubleValue();
+        metricsPublisher.addMetric (MetricsConstants. RESERVATION_REVENUE
+                , revenueDifference, // convert BigDecimal to double for method call
+                StandardUnit.None);
         return updatedReservation;
     }
 }
